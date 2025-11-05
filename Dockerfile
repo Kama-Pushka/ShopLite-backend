@@ -24,6 +24,8 @@ RUN pip install --no-cache-dir --upgrade pip \
 COPY . .
 
 RUN chown -R app:app /app
+RUN chown -R app:app /app/alembic/versions
+
 ENV PYTHONPATH="/app"
 
 USER app
