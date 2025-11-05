@@ -6,8 +6,7 @@ from app.database import get_db
 from app.services.auth_service import AuthService
 from app.schemas.user import EmailSchema, ResetPassword
 
-router = APIRouter(prefix="/v1/api/auth", tags=["Auth"])
-
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @router.post("/register", response_model=Token)
 async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
