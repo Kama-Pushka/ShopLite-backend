@@ -2,10 +2,11 @@ from pydantic_settings import BaseSettings
 
 from pydantic import Field
 from dotenv import load_dotenv
+
 load_dotenv()
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql+psycopg2://authuser:authpass@db:5432/shoplite_db"
+    DATABASE_URL: str = "postgresql+asyncpg://authuser:authpass@db:5432/shoplite_db"
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
