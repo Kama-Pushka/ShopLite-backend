@@ -7,6 +7,17 @@ from app.services.security_service import hash_password, verify_password, create
 from app.config import settings
 from app.services.email_service import send_reset_email
 from jose import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import jwt, JWTError
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+
+from app.database import get_db, User
+from app.config import settings
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v1/api/auth/login")
+
 
 class AuthService:
     @staticmethod
@@ -60,4 +71,26 @@ class AuthService:
 
         user.hashed_password = hash_password(new_password)
         await db.commit()
+        return user
+
+    @staticmethod
+    async def get_current_user(
+        token: str = Depends(oauth2_scheme),
+        db: AsyncSession = Depends(get_db)
+    ):
+        try:
+            payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+            user_id: str = payload.get("sub")
+            if user_id is None:
+                raise HTTPException(status_code=401, detail="Invalid authentication")
+
+        except JWTError:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        query = await db.execute(select(User).where(User.id == int(user_id)))
+        user = query.scalars().first()
+
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+
         return user

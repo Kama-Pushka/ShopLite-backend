@@ -1,17 +1,22 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.database import Store, get_db
+from app.database import Store, get_db, User
 from app.schemas.store import StoreCreate, StoreOut
-
+from app.services.auth_service import AuthService
 router = APIRouter(prefix="/stores", tags=["Stores"])
 
 
 @router.get("/", response_model=list[StoreOut])
-async def get_stores(db: AsyncSession = Depends(get_db)):
-    rows = await db.execute(select(Store))
+async def get_stores(
+    current_user: User = Depends(AuthService.get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    rows = await db.execute(
+        select(Store).where(Store.user_id == current_user.id)
+    )
+    
     return rows.scalars().all()
-
 
 @router.get("/{store_id}", response_model=StoreOut)
 async def get_store(store_id: int, db: AsyncSession = Depends(get_db)):
@@ -22,15 +27,18 @@ async def get_store(store_id: int, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/", response_model=StoreOut)
-async def create_store(payload: StoreCreate, db: AsyncSession = Depends(get_db)):
+async def create_store(payload: StoreCreate,
+                       current_user: User = Depends(AuthService.get_current_user),
+                       db: AsyncSession = Depends(get_db)):
     store = Store(
-        user_id=payload.user_id,
+        user_id=current_user.id,
         name=payload.name,
         description=payload.description,
         color=payload.color,
         slug=payload.slug,
         logo_url=payload.logo_url,
     )
+    
     db.add(store)
     await db.commit()
     await db.refresh(store)
