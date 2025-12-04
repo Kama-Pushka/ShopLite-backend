@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     SMTP_USER: str = Field("", env="SMTP_USER")
     SMTP_PASSWORD: str = Field("", env="SMTP_PASSWORD")
 
+    MEDIA_ROOT: str = Field("uploads", env="MEDIA_ROOT")
+    MEDIA_URL: str = Field("/uploads", env="MEDIA_URL")
+    PUBLIC_BASE_URL: str = Field("http://localhost:8000", env="PUBLIC_BASE_URL")
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

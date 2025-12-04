@@ -16,3 +16,19 @@ class StoreOut(StoreCreate):
 
     class Config:
         orm_mode = True
+
+
+class PublishedStoreOut(BaseModel):
+    id: int
+    name: str
+    slug: str
+    description: str | None = None
+    color: str | None = None
+    logo_url: str | None = None
+    domain: str | None = None
+    design_data: dict | None = None
+    theme: dict | None = None
+    custom_css: str | None = None
+    version: int | None = None
+    published: bool = True
+    published_url: str
