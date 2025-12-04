@@ -29,8 +29,19 @@ async def update_design(store_id: int, payload: StoreDesignUpdate, db: AsyncSess
         design = StoreDesign(store_id=store_id, design_data={})
         db.add(design)
 
-    for key, value in payload.dict().items():
+    data = payload.dict(exclude_unset=True)
+    for key, value in data.items():
         setattr(design, key, value)
+
+    # синхронизируем логотип магазина, если пришёл из конструктора
+    store_logo = None
+    if "design_data" in data:
+        dd = data.get("design_data") or {}
+        store_logo = dd.get("storeLogo") or dd.get("store_logo")
+    if store_logo:
+        store_row = await db.get(Store, store_id)
+        if store_row:
+            store_row.logo_url = store_logo
 
     await db.commit()
     await db.refresh(design)
