@@ -9,6 +9,7 @@ class UserCreate(BaseModel):
 class UserOut(BaseModel):
     id: int
     email: EmailStr
+    name: str | None = None
 
     class Config:
         orm_mode = True
@@ -32,3 +33,6 @@ class ResetPassword(BaseModel):
     token: str
     new_password: str
 
+
+class RefreshToken(BaseModel):
+    refresh_token: str

@@ -1,20 +1,15 @@
-from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 from datetime import timedelta
-from app.database import User
-from app.services.security_service import hash_password, verify_password, create_token
-from app.config import settings
-from app.services.email_service import send_reset_email
-from jose import jwt
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt, JWTError
+from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.database import get_db, User
 from app.config import settings
+from app.database import User, get_db
+from app.services.email_service import send_reset_email
+from app.services.security_service import create_token, hash_password, verify_password
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v1/api/auth/login")
 
@@ -94,3 +89,20 @@ class AuthService:
             raise HTTPException(status_code=401, detail="User not found")
 
         return user
+
+    @staticmethod
+    async def refresh_tokens(refresh_token: str, db: AsyncSession):
+        try:
+            payload = jwt.decode(refresh_token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+            user_id = int(payload.get("sub"))
+        except JWTError:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+
+        query = await db.execute(select(User).where(User.id == user_id))
+        user = query.scalars().first()
+        if not user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+
+        access_token = create_token({"sub": str(user.id)}, timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+        new_refresh_token = create_token({"sub": str(user.id)}, timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS))
+        return access_token, new_refresh_token

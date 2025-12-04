@@ -3,7 +3,7 @@ from typing import Optional
 
 
 class CollectionBase(BaseModel):
-    store_id: int
+    store_id: int | None = None
     name: str
     description: Optional[str] = None
     image_url: Optional[str] = None
